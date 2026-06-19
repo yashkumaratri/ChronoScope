@@ -57,41 +57,47 @@ Our findings reveal a significant gap between models' static knowledge and their
 ## 📂 Repository Structure
 
 ```text
-├── data/                   # Dataset samples and loading scripts
-├── eval/                   # Evaluation scripts and prompt templates
-├── src/                    
-│   ├── model_inference.py  # Script to run LLMs on ChronoScope
-│   └── metrics.py          # Implementation of StrictChain@1 and Drift metrics
-├── results/                # Raw results and analysis notebooks
+├── source/
+│   ├── hf_scope_benchmark.py     # Main Hugging Face model evaluation script
+│   ├── run_benchmark.sbatch      # SLURM cluster submission template
+│   ├── build_label_db.py         # Utilities to build label databases
+│   ├── build_stage2_truth.py     # Stage 2 ground truth construction
+│   ├── build_stage3_dataset.py   # Final dataset preparation pipeline
+│   ├── extract_stage1.py         # Data extraction pipeline (Stage 1)
+│   └── extract_from_shards.py    # Shard processing utilities
 ├── LICENSE
 └── README.md
 ```
 
 ## ⚙️ Installation & Usage
 
-### 1. Environment Setup
-```bash
-# Clone the repository
-git clone [https://github.com/yashkumaratri/ChronoScope.git](https://github.com/yashkumaratri/ChronoScope.git)
-cd ChronoScope
 
-# Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+To evaluate a model on the **ChronoScope** benchmark.
 
-# Install dependencies
-pip install -r requirements.txt
+# Download the raw benchmark file using huggingface-cli
+huggingface-cli download yashkumaratri/ChronoScope merged_scope_benchmark.jsonl --repo-type dataset --local-dir /path/to/your/storage/
 
-### 🚀 Running Evaluation
+# Choose execution mode
 
-To evaluate a model on the **ChronoScope** benchmark, use the `run_eval.py` script. You can specify the model, the reasoning family (e.g., Carryover, Scope Switch), and the context setting.
+# Option A: Local / Interactive Execution
 
-```bash
-# Evaluate a specific model on a specific chain family
-```
+python source/hf_scope_benchmark.py \
+  --data "/path/to/your/storage/merged_scope_benchmark.jsonl" \
+  --model "nvidia/Nemotron-Cascade-8B" \
+  --out "results/nemotron_results.json" \
+  --max_chains 50000 \
+  --self_max_chains 10000 \
+  --batch_size 16 \
+  --max_new_tokens 24 \
+  --dtype bfloat16 \
+  --scope_turns_only \
+  --match_mode relaxed
 
-# To run the full benchmark across all 11 families
-updates on the way.
+# Option B: HPC Cluster Deployment (SLURM)
+Make changes in the slurm file and execute
+
+sbatch source/run_benchmark.sbatch
+
 
 
 ## 📝 Citation
@@ -103,8 +109,7 @@ If you find our work or the ChronoScope dataset useful in your research, please 
   author={Atri, Yash Kumar and Johnson, Steven L. and Hartvigsen, Tom},
   booktitle={Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (ACL)},
   year={2026},
-  publisher={Association for Computational Linguistics},
-  url={https://your-paper-url-here.pdf}
+  publisher={Association for Computational Linguistics}
 }
 ```
 **Yash Kumar Atri** — [atri@virginia.edu](mailto:atri@virginia.edu)
